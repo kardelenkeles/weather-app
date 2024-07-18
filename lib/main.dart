@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:uplide_task/config/di/service_locator.dart';
 import 'package:uplide_task/view/screens/home_screen.dart';
 
 Future<void> main() async {
+  setupLocator();
   await dotenv.load(fileName: ".env");
   runApp(const MyApp());
 }
