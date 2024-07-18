@@ -38,9 +38,10 @@ abstract class $AppRouter extends _i5.RootStackRouter {
       );
     },
     WeatherDetailRoute.name: (routeData) {
+      final args = routeData.argsAs<WeatherDetailRouteArgs>();
       return _i5.AutoRoutePage<dynamic>(
         routeData: routeData,
-        child: _i4.WeatherDetailScreen(),
+        child: _i4.WeatherDetailScreen(city: args.city),
       );
     },
   };
@@ -90,14 +91,29 @@ class SplashRoute extends _i5.PageRouteInfo<void> {
 
 /// generated route for
 /// [_i4.WeatherDetailScreen]
-class WeatherDetailRoute extends _i5.PageRouteInfo<void> {
-  const WeatherDetailRoute({List<_i5.PageRouteInfo>? children})
-      : super(
+class WeatherDetailRoute extends _i5.PageRouteInfo<WeatherDetailRouteArgs> {
+  WeatherDetailRoute({
+    required String city,
+    List<_i5.PageRouteInfo>? children,
+  }) : super(
           WeatherDetailRoute.name,
+          args: WeatherDetailRouteArgs(city: city),
           initialChildren: children,
         );
 
   static const String name = 'WeatherDetailRoute';
 
-  static const _i5.PageInfo<void> page = _i5.PageInfo<void>(name);
+  static const _i5.PageInfo<WeatherDetailRouteArgs> page =
+      _i5.PageInfo<WeatherDetailRouteArgs>(name);
+}
+
+class WeatherDetailRouteArgs {
+  const WeatherDetailRouteArgs({required this.city});
+
+  final String city;
+
+  @override
+  String toString() {
+    return 'WeatherDetailRouteArgs{city: $city}';
+  }
 }

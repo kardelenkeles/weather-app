@@ -1,15 +1,15 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:uplide_task/models/weather_model.dart';
 import 'package:uplide_task/services/weather_service.dart';
 
-class WeatherViewModel with ChangeNotifier {
-  List<WeatherModel>? _weatherList;
+class WeatherViewModel extends ChangeNotifier {
   bool _isLoading = false;
   String? _errorMessage;
+  List<WeatherModel>? _weatherList;
 
-  List<WeatherModel>? get weatherList => _weatherList;
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
+  List<WeatherModel>? get weatherList => _weatherList;
 
   final WeatherService _weatherService = WeatherService();
 

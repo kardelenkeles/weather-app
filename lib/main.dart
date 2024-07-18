@@ -3,6 +3,7 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:provider/provider.dart';
 import 'package:uplide_task/config/di/service_locator.dart';
 import 'package:uplide_task/config/router/app_router.dart';
+import 'package:uplide_task/viewmodels/city_viewmodel.dart';
 import 'package:uplide_task/viewmodels/weather_viewmodel.dart';
 
 Future<void> main() async {
@@ -21,6 +22,7 @@ class MyApp extends StatelessWidget {
     return MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => WeatherViewModel()),
+        ChangeNotifierProvider(create: (_) => CityViewModel()),
       ],
       child: MaterialApp.router(
         debugShowCheckedModeBanner: false,
