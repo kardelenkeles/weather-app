@@ -12,6 +12,18 @@ class ExploreScreen extends StatefulWidget {
 
 class _ExploreScreenState extends State<ExploreScreen> {
   final TextEditingController _cityController = TextEditingController();
+  bool _showLastVisited = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadLastVisitedCities();
+  }
+
+  Future<void> _loadLastVisitedCities() async {
+    final cityViewModel = Provider.of<CityViewModel>(context, listen: false);
+    await cityViewModel.getLastVisitedCities();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -25,6 +37,7 @@ class _ExploreScreenState extends State<ExploreScreen> {
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             TextField(
               controller: _cityController,
@@ -46,9 +59,7 @@ class _ExploreScreenState extends State<ExploreScreen> {
               },
             ),
             const SizedBox(height: 20),
-            if (cityViewModel.isFetchingCities)
-              const CircularProgressIndicator()
-            else if (cityViewModel.citySuggestions.isNotEmpty)
+            if (cityViewModel.citySuggestions.isNotEmpty)
               Expanded(
                 child: ListView.builder(
                   itemCount: cityViewModel.citySuggestions.length,
@@ -58,6 +69,8 @@ class _ExploreScreenState extends State<ExploreScreen> {
                       onTap: () {
                         weatherViewModel
                             .fetchWeather(cityViewModel.citySuggestions[index]);
+                        cityViewModel.saveLastVisitedCity(
+                            cityViewModel.citySuggestions[index]);
                         Navigator.push(
                           context,
                           MaterialPageRoute(
@@ -71,13 +84,58 @@ class _ExploreScreenState extends State<ExploreScreen> {
                 ),
               ),
             const SizedBox(height: 20),
-            if (weatherViewModel.isLoading)
-              const CircularProgressIndicator()
-            else if (weatherViewModel.errorMessage != null)
-              Text(
-                weatherViewModel.errorMessage!,
-                style: const TextStyle(color: Colors.red),
-              )
+            InkWell(
+              onTap: () {
+                setState(() {
+                  _showLastVisited = !_showLastVisited;
+                });
+              },
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(Icons.history),
+                  const SizedBox(width: 8),
+                  const Text('Last Visited Cities'),
+                ],
+              ),
+            ),
+            if (_showLastVisited)
+              Expanded(
+                child: FutureBuilder<List<String>>(
+                  future: cityViewModel.getLastVisitedCities(),
+                  builder: (context, snapshot) {
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return const CircularProgressIndicator();
+                    } else if (snapshot.hasError) {
+                      return Text('Error: ${snapshot.error}');
+                    } else if (snapshot.hasData && snapshot.data!.isNotEmpty) {
+                      return ListView.builder(
+                        itemCount: snapshot.data!.length,
+                        itemBuilder: (context, index) {
+                          return ListTile(
+                            title: Text(snapshot.data![index]),
+                            onTap: () {
+                              weatherViewModel
+                                  .fetchWeather(snapshot.data![index]);
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => WeatherDetailScreen(
+                                      city: snapshot.data![index]),
+                                ),
+                              );
+                            },
+                          );
+                        },
+                      );
+                    } else {
+                      return const Center(
+                        child: Text('No recent cities visited.'),
+                      );
+                    }
+                  },
+                ),
+              ),
           ],
         ),
       ),
