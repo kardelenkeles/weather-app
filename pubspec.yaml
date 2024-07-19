@@ -42,7 +42,12 @@ dependencies:
   provider: ^6.1.2
   http: ^1.2.2
   geolocator: ^11.1.0
+  lottie: ^3.1.2
+  flutter_weather_bg_null_safety: ^1.0.0
+  flutter_compass: ^0.8.0
+  fl_chart: ^0.68.0
 
+  
 dev_dependencies:
   flutter_test:
     sdk: flutter
@@ -68,6 +73,8 @@ flutter:
   
   assets:
     - .env
+    - assets/gifs/
+    - assets/icons/
   # To add assets to your application, add an assets section, like this:
   # assets:
   #   - images/a_dot_burr.jpeg

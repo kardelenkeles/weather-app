@@ -3,6 +3,7 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:provider/provider.dart';
 import 'package:uplide_task/config/di/service_locator.dart';
 import 'package:uplide_task/config/router/app_router.dart';
+import 'package:uplide_task/services/weather_service.dart';
 import 'package:uplide_task/viewmodels/city_viewmodel.dart';
 import 'package:uplide_task/viewmodels/weather_viewmodel.dart';
 
@@ -15,13 +16,14 @@ Future<void> main() async {
 
 class MyApp extends StatelessWidget {
   MyApp({super.key});
-  final _appRouter = AppRouter();
+  final _appRouter = locator<AppRouter>();
 
   @override
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
-        ChangeNotifierProvider(create: (_) => WeatherViewModel()),
+        ChangeNotifierProvider(
+            create: (_) => WeatherViewModel(locator<WeatherService>())),
         ChangeNotifierProvider(create: (_) => CityViewModel()),
       ],
       child: MaterialApp.router(

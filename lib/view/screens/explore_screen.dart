@@ -1,10 +1,11 @@
+import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:uplide_task/models/weather_model.dart';
-import 'package:uplide_task/view/screens/weather_detail_screen.dart';
 import 'package:uplide_task/viewmodels/city_viewmodel.dart';
 import 'package:uplide_task/viewmodels/weather_viewmodel.dart';
+import 'weather_detail_screen.dart';
 
+@RoutePage()
 class ExploreScreen extends StatefulWidget {
   @override
   _ExploreScreenState createState() => _ExploreScreenState();
@@ -25,14 +26,76 @@ class _ExploreScreenState extends State<ExploreScreen> {
     await cityViewModel.getLastVisitedCities();
   }
 
+  Future<void> _searchCity() async {
+    final cityViewModel = Provider.of<CityViewModel>(context, listen: false);
+    final weatherViewModel =
+        Provider.of<WeatherViewModel>(context, listen: false);
+
+    final cityName = _cityController.text;
+
+    if (cityName.isNotEmpty) {
+      await cityViewModel.fetchCitySuggestions(cityName);
+
+      if (cityViewModel.citySuggestions.contains(cityName)) {
+        weatherViewModel.fetchWeatherData(cityName);
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => WeatherDetailScreen(cityName: cityName),
+          ),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('City not found'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+
+      setState(() {
+        _showLastVisited = false;
+      });
+    }
+  }
+
+  void _toggleShowLastVisited() async {
+    final cityViewModel = Provider.of<CityViewModel>(context, listen: false);
+
+    if (_cityController.text.isEmpty) {
+      await cityViewModel.getLastVisitedCities();
+      setState(() {
+        _showLastVisited = !_showLastVisited;
+      });
+    } else {
+      setState(() {
+        _showLastVisited = false;
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final cityViewModel = Provider.of<CityViewModel>(context);
     final weatherViewModel = Provider.of<WeatherViewModel>(context);
 
     return Scaffold(
+      floatingActionButton: FloatingActionButton(
+        onPressed: (){},
+      ),
       appBar: AppBar(
-        title: const Text('Weather Forecast'),
+        actions: [
+          if (_showLastVisited)
+            IconButton(
+              icon: const Icon(Icons.delete_forever),
+              onPressed: () async {
+                await cityViewModel.clearLastVisitedCities();
+                setState(() {
+                  _showLastVisited = false;
+                });
+              },
+            ),
+        ],
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -45,21 +108,69 @@ class _ExploreScreenState extends State<ExploreScreen> {
                 labelText: 'City',
                 suffixIcon: IconButton(
                   icon: const Icon(Icons.search),
-                  onPressed: () {
-                    if (_cityController.text.isNotEmpty) {
-                      cityViewModel.fetchCitySuggestions(_cityController.text);
-                    }
-                  },
+                  onPressed: _searchCity,
                 ),
               ),
               onChanged: (text) {
                 if (text.isNotEmpty) {
                   cityViewModel.fetchCitySuggestions(text);
+                  setState(() {
+                    _showLastVisited = false;
+                  });
                 }
+              },
+              onTap: () {
+                _toggleShowLastVisited();
               },
             ),
             const SizedBox(height: 20),
-            if (cityViewModel.citySuggestions.isNotEmpty)
+            if (_showLastVisited)
+              Expanded(
+                child: Consumer<CityViewModel>(
+                  builder: (context, cityViewModel, child) {
+                    return FutureBuilder<List<String>>(
+                      future: cityViewModel.getLastVisitedCities(),
+                      builder: (context, snapshot) {
+                        if (snapshot.connectionState ==
+                            ConnectionState.waiting) {
+                          return const Center(
+                              child: CircularProgressIndicator());
+                        } else if (snapshot.hasError) {
+                          return Text('Error: ${snapshot.error}');
+                        } else if (snapshot.hasData &&
+                            snapshot.data!.isNotEmpty) {
+                          return Wrap(
+                            spacing: 8.0,
+                            runSpacing: 8.0,
+                            children: snapshot.data!.map((city) {
+                              return GestureDetector(
+                                onTap: () {
+                                  weatherViewModel.fetchWeatherData(city);
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) =>
+                                          WeatherDetailScreen(cityName: city),
+                                    ),
+                                  );
+                                },
+                                child: Chip(
+                                  label: Text(city),
+                                ),
+                              );
+                            }).toList(),
+                          );
+                        } else {
+                          return const Center(
+                            child: Text('No recent cities visited.'),
+                          );
+                        }
+                      },
+                    );
+                  },
+                ),
+              ),
+            if (!_showLastVisited && cityViewModel.citySuggestions.isNotEmpty)
               Expanded(
                 child: ListView.builder(
                   itemCount: cityViewModel.citySuggestions.length,
@@ -67,72 +178,20 @@ class _ExploreScreenState extends State<ExploreScreen> {
                     return ListTile(
                       title: Text(cityViewModel.citySuggestions[index]),
                       onTap: () {
-                        weatherViewModel
-                            .fetchWeather(cityViewModel.citySuggestions[index]);
+                        weatherViewModel.fetchWeatherData(
+                            cityViewModel.citySuggestions[index]);
                         cityViewModel.saveLastVisitedCity(
                             cityViewModel.citySuggestions[index]);
                         Navigator.push(
                           context,
                           MaterialPageRoute(
                             builder: (context) => WeatherDetailScreen(
-                                city: cityViewModel.citySuggestions[index]),
+                              cityName: cityViewModel.citySuggestions[index],
+                            ),
                           ),
                         );
                       },
                     );
-                  },
-                ),
-              ),
-            const SizedBox(height: 20),
-            InkWell(
-              onTap: () {
-                setState(() {
-                  _showLastVisited = !_showLastVisited;
-                });
-              },
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Icon(Icons.history),
-                  const SizedBox(width: 8),
-                  const Text('Last Visited Cities'),
-                ],
-              ),
-            ),
-            if (_showLastVisited)
-              Expanded(
-                child: FutureBuilder<List<String>>(
-                  future: cityViewModel.getLastVisitedCities(),
-                  builder: (context, snapshot) {
-                    if (snapshot.connectionState == ConnectionState.waiting) {
-                      return const CircularProgressIndicator();
-                    } else if (snapshot.hasError) {
-                      return Text('Error: ${snapshot.error}');
-                    } else if (snapshot.hasData && snapshot.data!.isNotEmpty) {
-                      return ListView.builder(
-                        itemCount: snapshot.data!.length,
-                        itemBuilder: (context, index) {
-                          return ListTile(
-                            title: Text(snapshot.data![index]),
-                            onTap: () {
-                              weatherViewModel
-                                  .fetchWeather(snapshot.data![index]);
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => WeatherDetailScreen(
-                                      city: snapshot.data![index]),
-                                ),
-                              );
-                            },
-                          );
-                        },
-                      );
-                    } else {
-                      return const Center(
-                        child: Text('No recent cities visited.'),
-                      );
-                    }
                   },
                 ),
               ),

@@ -6,9 +6,9 @@ import 'package:uplide_task/config/router/app_router.gr.dart';
 class AppRouter extends $AppRouter {
   @override
   List<AutoRoute> get routes => [
-        AutoRoute(page: SplashRoute.page),
+        AutoRoute(page: SplashRoute.page, initial: true),
         AutoRoute(page: HomeRoute.page),
         AutoRoute(page: WeatherDetailRoute.page),
-        AutoRoute(page: ExploreRoute.page, initial: true),
+        AutoRoute(page: ExploreRoute.page),
       ];
 }

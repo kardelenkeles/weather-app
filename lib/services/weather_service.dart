@@ -1,26 +1,38 @@
-import 'dart:convert';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
-import 'package:http/http.dart' as http;
-import 'package:uplide_task/models/weather_model.dart';
+import 'package:uplide_task/models/forecaster_model.dart';
 
+import 'package:uplide_task/models/weather_model.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 
 class WeatherService {
-  final String _baseUrl = "http://api.openweathermap.org/data/2.5/forecast";
-  final String _apiKey = dotenv.env['API_KEY'].toString();
+  final String _baseUrl = dotenv.env['BASE_URL']!;
+  final String _apiKey = dotenv.env['API_KEY']!;
 
-  Future<List<WeatherModel>> fetchWeather(String city) async {
-    final response = await http.get(Uri.parse("$_baseUrl?q=$city&appid=$_apiKey&units=metric"));
+  Future<WeatherModel> fetchCurrentWeather(String cityName) async {
 
-    print('Response status: ${response.statusCode}');
-    print('Response body: ${response.body}');
-
+    final response = await http.get(
+        Uri.parse('$_baseUrl/weather?q=$cityName&appid=$_apiKey&units=metric'));
     if (response.statusCode == 200) {
-      Map<String, dynamic> json = jsonDecode(response.body);
-      List<dynamic> list = json['list'];
-      List<WeatherModel> weatherList = list.map((data) => WeatherModel.fromJson(data)).toList();
-      return weatherList;
+      print(WeatherModel.fromJson(json.decode(response.body)));
+      return WeatherModel.fromJson(json.decode(response.body));
+
     } else {
       throw Exception('Failed to load weather data');
     }
+  }
+
+  Future<DailyForecastModel> fetchForecast(String cityName) async {
+      final response = await http.get(Uri.parse(
+          '$_baseUrl/forecast?q=$cityName&appid=$_apiKey&units=metric'));
+
+      if (response.statusCode == 200) {
+        return DailyForecastModel.fromJson(json.decode(response.body));
+      } else {
+        return DailyForecastModel(list: []);
+      }
+
+
+
   }
 }
